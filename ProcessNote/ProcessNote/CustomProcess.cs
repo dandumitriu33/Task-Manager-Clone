@@ -7,6 +7,7 @@ using System.Windows.Threading;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
 
 namespace ProcessNote
 {
@@ -27,50 +28,100 @@ namespace ProcessNote
         /// Populates the list of Custom Processes 'Stats' used by xaml for display 
         /// </summary>
         /// <returns></returns>
-        public static async Task PopulateStats()
+        public static void PopulateStats()
         {
             List<CustomProcess> result = new List<CustomProcess>();
-            Process[] remoteAll = await Task.Run(() => Process.GetProcesses());
-            foreach (var item in remoteAll)
-            {
-                // Some data is not accessible due to security, simulations in place
-                long cpu = 0;
-                if (History.Count() <= 0)
+            ConcurrentBag<CustomProcess> tempBag = new ConcurrentBag<CustomProcess>();
+            Parallel.ForEach(Process.GetProcesses(),
+                item => 
                 {
-                    Random randomPercent = new Random();
-                    cpu = randomPercent.Next(5, 17);
-                }
-                else
-                {
-                    Random randomPositiveNegative = new Random();
-                    var values = new[] { 2, -2, 1, -1, 1, 1, 1, -1, -1, -1 };
-                    int randomPercent = values[randomPositiveNegative.Next(values.Length)];
-                    cpu = findPreviousCPUValue(item.Id) + randomPercent;
-                }
-                string startTime = "00";
-                try
-                {
-                    startTime = Convert.ToString(item.StartTime);
-                }
-                catch (Exception e)
-                {
-                    //Console.WriteLine(e.Message);
-                    startTime = "6/15/2020 8:45:61 PM";
-                }
-                result.Add(new CustomProcess()
-                {
-                    ID = item.Id,
-                    Name = item.ProcessName,
-                    Note = verifyNote(item.Id),
-                    CPU = cpu,
-                    Memory = Convert.ToInt64(item.WorkingSet64),
-                    Started = startTime,
-                    Thread = Convert.ToInt64(item.Threads.Count)
+                    // Some data is not accessible due to security, simulations in place
+                    long cpu = 0;
+                    if (History.Count() <= 0)
+                    {
+                        Random randomPercent = new Random();
+                        cpu = randomPercent.Next(5, 17);
+                    }
+                    else
+                    {
+                        Random randomPositiveNegative = new Random();
+                        var values = new[] { 2, -2, 1, -1, 1, 1, 1, -1, -1, -1 };
+                        int randomPercent = values[randomPositiveNegative.Next(values.Length)];
+                        cpu = findPreviousCPUValue(item.Id) + randomPercent;
+                    }
+                    string startTime = "00";
+                    try
+                    {
+                        startTime = Convert.ToString(item.StartTime);
+                    }
+                    catch (Exception e)
+                    {
+                        //Console.WriteLine(e.Message);
+                        startTime = "6/15/2020 8:45:61 PM";
+                    }
+                    tempBag.Add(new CustomProcess()
+                    {
+                        ID = item.Id,
+                        Name = item.ProcessName,
+                        Note = verifyNote(item.Id),
+                        CPU = cpu,
+                        Memory = Convert.ToInt64(item.WorkingSet64),
+                        Started = startTime,
+                        Thread = Convert.ToInt64(item.Threads.Count)
+                    });
                 });
+            foreach (var item in tempBag)
+            {
+                result.Add(item);
             }
             Stats = result;
             populateHistory(result);
+
+
+
         }
+        //    List<CustomProcess> result = new List<CustomProcess>();
+        //    Process[] remoteAll = Process.GetProcesses());
+        //    foreach (var item in remoteAll)
+        //    {
+        //        // Some data is not accessible due to security, simulations in place
+        //        long cpu = 0;
+        //        if (History.Count() <= 0)
+        //        {
+        //            Random randomPercent = new Random();
+        //            cpu = randomPercent.Next(5, 17);
+        //        }
+        //        else
+        //        {
+        //            Random randomPositiveNegative = new Random();
+        //            var values = new[] { 2, -2, 1, -1, 1, 1, 1, -1, -1, -1 };
+        //            int randomPercent = values[randomPositiveNegative.Next(values.Length)];
+        //            cpu = findPreviousCPUValue(item.Id) + randomPercent;
+        //        }
+        //        string startTime = "00";
+        //        try
+        //        {
+        //            startTime = Convert.ToString(item.StartTime);
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            //Console.WriteLine(e.Message);
+        //            startTime = "6/15/2020 8:45:61 PM";
+        //        }
+        //        result.Add(new CustomProcess()
+        //        {
+        //            ID = item.Id,
+        //            Name = item.ProcessName,
+        //            Note = verifyNote(item.Id),
+        //            CPU = cpu,
+        //            Memory = Convert.ToInt64(item.WorkingSet64),
+        //            Started = startTime,
+        //            Thread = Convert.ToInt64(item.Threads.Count)
+        //        });
+        //    }
+        //    Stats = result;
+        //    populateHistory(result);
+        //}
 
         /// <summary>
         /// Checks if there is a note for the process ID in the Notes and returns the text
@@ -93,7 +144,7 @@ namespace ProcessNote
         /// </summary>
         /// <param name="result"></param>
         /// <returns></returns>
-        private static bool populateHistory(List<CustomProcess> result)
+        private static void populateHistory(List<CustomProcess> result)
         {
             foreach (var item in result)
             {
@@ -107,7 +158,6 @@ namespace ProcessNote
                 }
             }
             Console.WriteLine("history populated");
-            return true;
         }
 
         /// <summary>

@@ -87,11 +87,11 @@ namespace ProcessNote
 
         }
 
-        private async void dispatcherTimer_Tick(object sender, EventArgs e)
+        private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
             List<CustomProcess> stats = new List<CustomProcess>();
             //stats = CustomProcess.PopulateStats();
-            await CustomProcess.PopulateStats();
+            CustomProcess.PopulateStats();
             //statsSource.ItemsSource = Sorter.SortProcesses(stats, sortMethod);
             statsSource.ItemsSource = Sorter.SortProcesses(CustomProcess.Stats, sortMethod);
         }
