@@ -1,5 +1,7 @@
-# ProcessNote
-1st TW week exercise in .NET basics module
+# Team-Manager-Clone (ProcessNote)
+Codecool educational project - 1st TW week exercise in .NET basics module  
+Original project where I worked with my teammates at: https://github.com/cdne/process-note-c-sharp
+
 
 ## Description
 As an IT administrator I would like to have to check what kind of processes are running on the machine. I would like to make comment on it. As an IT administrator I would like to get the running process names and If I select one of it I would like to see some major property of it.
